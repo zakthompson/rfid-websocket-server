@@ -1,22 +1,39 @@
 import asyncio
 
 from websockets.asyncio.server import serve
+from websockets.exceptions import ConnectionClosed
 from mfrc522 import SimpleMFRC522
 
 reader = SimpleMFRC522()
+clients = set()
 
 
 async def read_card():
     while True:
         id, text = reader.read()
         if text:
-            print(f"Card read: {id} {text}")
+            broadcast(text)
         await asyncio.sleep(1)
 
 
-async def handler(websocket):
-    async for message in websocket:
+async def send_message(websocket, message):
+    try:
         await websocket.send(message)
+    except ConnectionClosed:
+        pass
+
+
+def broadcast(message):
+    for websocket in clients:
+        asyncio.create_task(send_message(websocket, message))
+
+
+async def handler(websocket):
+    clients.add(websocket)
+    try:
+        await websocket.wait_closed()
+    finally:
+        clients.remove(websocket)
 
 
 async def run_server():
