@@ -9,11 +9,14 @@ clients = set()
 
 
 async def read_card():
-    while True:
-        _, text = reader.read()
-        if text:
-            broadcast(text)
-        await asyncio.sleep(1)
+    try:
+        while True:
+            _, text = reader.read()
+            if text:
+                broadcast(text)
+            await asyncio.sleep(1)
+    except KeyboardInterrupt:
+        pass
 
 
 async def send_message(websocket, message):
@@ -37,15 +40,15 @@ async def handler(websocket):
 
 
 async def run_server():
-    async with serve(handler, port=8765) as server:
-        await server.wait_closed()
+    try:
+        async with serve(handler, port=8765):
+            await asyncio.get_running_loop().create_future()
+    except KeyboardInterrupt:
+        pass
 
 
 async def main():
     await asyncio.gather(run_server(), read_card())
 
 
-try:
-    asyncio.run(main())
-except KeyboardInterrupt:
-    pass
+asyncio.run(main())
