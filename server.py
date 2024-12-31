@@ -6,11 +6,12 @@ from mfrc522 import SimpleMFRC522
 
 reader = SimpleMFRC522()
 clients = set()
+loop = asyncio.get_event_loop()
 
 
 async def read_card():
     while True:
-        id, text = reader.read()
+        _, text = reader.read()
         if text:
             broadcast(text)
         await asyncio.sleep(1)
@@ -37,12 +38,12 @@ async def handler(websocket):
 
 
 async def run_server():
-    async with serve(handler, "localhost", 8765) as server:
+    async with serve(handler, port=8765) as server:
         await server.serve_forever()
 
 
 async def main():
-    await asyncio.gather(run_server(), read_card())
+    loop.run_until_complete(asyncio.gather(run_server(), read_card()))
 
 
 asyncio.run(main())
