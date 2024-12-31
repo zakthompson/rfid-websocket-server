@@ -37,12 +37,15 @@ async def handler(websocket):
 
 
 async def run_server():
-    server = await serve(handler, port=8765)
-    await server.wait_closed()
+    async with serve(handler, port=8765) as server:
+        await server.wait_closed()
 
 
 async def main():
     await asyncio.gather(run_server(), read_card())
 
 
-asyncio.run(main())
+try:
+    asyncio.run(main())
+except KeyboardInterrupt:
+    pass
