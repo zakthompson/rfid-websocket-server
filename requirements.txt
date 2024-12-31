@@ -1,0 +1,2 @@
+mfrc522-python==0.0.7
+websockets==14.1
