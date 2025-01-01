@@ -1,19 +1,18 @@
 import asyncio
 
-from websockets.asyncio.server import serve
+from websockets.server import serve
 from websockets.exceptions import ConnectionClosed
 from mfrc522 import SimpleMFRC522
 
 reader = SimpleMFRC522()
 clients = set()
-tasks = set()
 
 
 async def read_card():
     while True:
         _, text = reader.read()
         if text:
-            broadcast(text)
+            await broadcast(text)
         await asyncio.sleep(1)
 
 
@@ -24,9 +23,9 @@ async def send_message(websocket, message):
         pass
 
 
-def broadcast(message):
-    for websocket in clients:
-        asyncio.create_task(send_message(websocket, message))
+async def broadcast(message):
+    tasks = [send_message(websocket, message) for websocket in clients]
+    await asyncio.gather(*tasks, return_exceptions=True)
 
 
 async def handler(websocket):
@@ -37,14 +36,12 @@ async def handler(websocket):
         clients.remove(websocket)
 
 
-async def run_server():
-    async with serve(handler, port=8765):
-        await asyncio.get_running_loop().create_future()
-
-
 async def main():
-    tasks.add(asyncio.create_task(run_server()))
-    tasks.add(asyncio.create_task(read_card()))
+    server = await serve(handler, port=8765)
+    print("Websocket server started")
+
+    await asyncio.gather(read_card(), server.wait_closed())
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
