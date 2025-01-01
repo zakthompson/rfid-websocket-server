@@ -1,6 +1,6 @@
 import asyncio
 
-from websockets.server import serve
+from websockets import serve
 from websockets.exceptions import ConnectionClosed
 from mfrc522 import SimpleMFRC522
 
@@ -37,10 +37,9 @@ async def handler(websocket):
 
 
 async def main():
-    server = await serve(handler, port=8765)
-    print("Websocket server started")
-
-    await asyncio.gather(read_card(), server.wait_closed())
+    async with serve(handler, port=8765) as server:
+        print("Websocket server started")
+        await asyncio.gather(read_card(), server.wait_closed())
 
 
 if __name__ == "__main__":
