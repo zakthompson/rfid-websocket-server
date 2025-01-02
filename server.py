@@ -10,7 +10,7 @@ clients = set()
 
 async def read_card():
     while True:
-        _, text = reader.read()
+        _, text = reader.read_no_block()
         if text:
             await broadcast(text)
         await asyncio.sleep(1)
